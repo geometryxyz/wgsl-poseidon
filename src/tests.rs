@@ -11,14 +11,24 @@ pub fn test_gen_constants() {
     let input_to_gpu = bigints_to_bytes(vec![BigUint::from_slice(&[0])]);
 
     // Send to the GPU
-    let wgsl = concat_files(vec!["src/structs.wgsl", "src/storage.wgsl", "src/bigint.wgsl", "src/fr.wgsl", "src/constants_test.wgsl"]);
+    let wgsl = concat_files(
+        vec![
+            "src/structs.wgsl",
+            "src/storage.wgsl",
+            "src/bigint.wgsl",
+            "src/fr.wgsl",
+            "src/t2_constants.wgsl",
+            "src/constants_test.wgsl"
+        ]
+    );
 
     let sw = Stopwatch::start_new();
     let result = pollster::block_on(single_buffer_compute(&wgsl, &input_to_gpu, 1)).unwrap();
     println!("GPU took {}ms", sw.elapsed_ms());
 
     let result = u32s_to_bigints(result);
-    println!("{:?}", result);
+    // The first constant c: 4417881134626180770308697923359573201005643519861877412381846989312604493735
+    assert_eq!(result[0], BigUint::parse_bytes(b"9c46e9ec68e9bd4fe1faaba294cba38a71aa177534cdd1b6c7dc0dbd0abd7a7", 16).unwrap());
 }
 
 #[test]
