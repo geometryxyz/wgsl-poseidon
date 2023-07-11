@@ -12,3 +12,4 @@ your GPU.
 Much of the big integer and field arithmetic code was adapted from
 [msm-webgpu](https://github.com/sampritipanda/msm-webgpu) by Sampriti, Adhyyan,
 and Nalin.
+# wgsl-poseidon
