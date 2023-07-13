@@ -7,7 +7,6 @@ use crate::bn254::get_fr;
 use crate::gpu::single_buffer_compute;
 use crate::wgsl::concat_files;
 use crate::utils::{ bigints_to_bytes, u32s_to_bigints };
-use crate::codegen::{ append_from_file, gen_c_definitions };
 use poseidon_ark::{ Poseidon, load_constants };
 
 pub fn n_rounds(t: usize) -> (usize, usize) {

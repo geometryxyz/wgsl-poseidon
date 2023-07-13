@@ -23,7 +23,7 @@ pub async fn device_setup_default(
     let adapter = instance
         //.request_adapter(&wgpu::RequestAdapterOptions::default())
         .request_adapter(&wgpu::RequestAdapterOptions {
-            power_preference: wgpu::PowerPreference::LowPower,
+            power_preference: wgpu::PowerPreference::HighPerformance,
             force_fallback_adapter: false,
             compatible_surface: None,
         })
