@@ -18,6 +18,7 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
     var a: BigInt256 = buf[global_id.x];
     var state_0: BigInt256;
     var state_1 = a;
+
     var n_rounds_f = 8u;
     var n_rounds_p = 56u;
 

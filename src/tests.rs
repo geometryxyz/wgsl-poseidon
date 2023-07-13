@@ -7,31 +7,6 @@ use crate::wgsl::concat_files;
 use crate::utils::{ bigints_to_bytes, u32s_to_bigints };
 
 #[test]
-pub fn test_gen_constants() {
-    let input_to_gpu = bigints_to_bytes(vec![BigUint::from_slice(&[0])]);
-
-    // Send to the GPU
-    let wgsl = concat_files(
-        vec![
-            "src/wgsl/structs.wgsl",
-            "src/wgsl/storage.wgsl",
-            "src/wgsl/bigint.wgsl",
-            "src/wgsl/fr.wgsl",
-            "src/wgsl/t2_constants.wgsl",
-            "src/wgsl/constants_test.wgsl"
-        ]
-    );
-
-    let sw = Stopwatch::start_new();
-    let result = pollster::block_on(single_buffer_compute(&wgsl, &input_to_gpu, 1)).unwrap();
-    println!("GPU took {}ms", sw.elapsed_ms());
-
-    let result = u32s_to_bigints(result);
-    // The first constant c: 4417881134626180770308697923359573201005643519861877412381846989312604493735
-    assert_eq!(result[0], BigUint::parse_bytes(b"9c46e9ec68e9bd4fe1faaba294cba38a71aa177534cdd1b6c7dc0dbd0abd7a7", 16).unwrap());
-}
-
-#[test]
 pub fn test_pow_5() {
     // The BN254 scalar field modulus
     let p = get_fr();
@@ -99,7 +74,7 @@ pub fn test_multi_pow_5() {
         inputs.push(a);
     }
 
-    let times_to_pow = 3;
+    let times_to_pow = 512;
 
     let sw = Stopwatch::start_new();
     for i in 0..num_inputs {

@@ -10,7 +10,7 @@ fn pow_5(a: ptr<function, BigInt256>) -> BigInt256 {
 @workgroup_size(256)
 fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
     var a: BigInt256 = buf[global_id.x];
-    var times_to_pow = 3u;
+    var times_to_pow = 512u;
     for (var i = 0u; i < times_to_pow; i++) {
         a = pow_5(&a);
     }
