@@ -1,8 +1,7 @@
 use std::env;
 use std::fs;
 use poseidon_ark::load_constants;
-use num_bigint::BigUint;
-use wgsl_poseidon::utils::bigint_to_limbs;
+use wgsl_poseidon::codegen::gen_c_definitions;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -36,21 +35,8 @@ fn main() {
 
     let start = format!("fn get_t{}_constant_c(index: u32) -> BigInt256 {{", t);
     let end = "}";
-    let mut c_definitions = String::new();
-
-    for (i, c) in constants_c_to_use.iter().enumerate() {
-        let mut block: String = format!("    var c_{}: BigInt256;\n", i);
-        let c_biguint: BigUint = (*c).into();
-        let limbs = bigint_to_limbs(&c_biguint);
-        for (j, limb) in limbs.iter().enumerate() {
-            let i_str = i.to_string();
-            let j_str = j.to_string();
-            let limb_str = limb.to_string();
-            block += format!("    c_{}.limbs[{}] = {}u;\n", i_str.clone(), j_str.clone(), limb_str.clone()).as_str();
-        }
-        c_definitions += String::from(block).as_str();
-        c_definitions += "\n";
-    }
+    let c_definitions = gen_c_definitions(constants_c_to_use);
+    println!("{}", c_definitions);
 
     let mut c_list = String::new();
     for i in 0..num_constants {
@@ -64,4 +50,5 @@ fn main() {
 
     let code = format!("{}\n{}\n{}\n{}", start, c_definitions, arr_code, end);
     fs::write(wgsl_output_file, code).expect("Error: unable to write to the output file.");
+    //println!("{}", code);
 }

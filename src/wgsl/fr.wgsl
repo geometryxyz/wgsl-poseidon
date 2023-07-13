@@ -81,23 +81,23 @@ fn fr_get_p_wide() -> BigInt512 {
 
 fn get_higher_with_slack(a: ptr<function, BigInt512>) -> BigInt256 {
     var out: BigInt256;
-    var slack = 2u; // 256 minus the bitwidth of the Fr modulus
-    var W = 16u;
-    var W_mask = 65535u;
+    /*var slack = 2u; // 256 minus the bitwidth of the Fr modulus*/
+    /*var W = 16u;*/
+    /*var W_mask = 65535u;*/
     for (var i = 0u; i < 16u; i ++) {
         /*
           This loop operates on the most significant bits of the bigint.
           It discards the least significant bits.
         */ 
         //                       mul by 2 ** 1         divide by 2 ** 15
-        out.limbs[i] = (((*a).limbs[i + 16u] << slack) + ((*a).limbs[i + 15u] >> (W - slack))) & W_mask;
+        /*out.limbs[i] = (((*a).limbs[i + 16u] << slack) + ((*a).limbs[i + 15u] >> (W - slack))) & W_mask;*/
+        out.limbs[i] = (((*a).limbs[i + 16u] << 2u) + ((*a).limbs[i + 15u] >> 14u)) & 65535u;
     }
     return out;
 }
 
 
 fn fr_mul(a: ptr<function, BigInt256>, b: ptr<function, BigInt256>) -> BigInt256 {
-    var N = 16u;
     var mu = fr_get_mu();
     var p = fr_get_p();
     var p_wide = fr_get_p_wide();
@@ -116,7 +116,7 @@ fn fr_mul(a: ptr<function, BigInt256>, b: ptr<function, BigInt256>) -> BigInt256
         r_wide = r_wide_reduced;
     }
     var r: BigInt256;
-    for (var i = 0u; i < N; i ++) {
+    for (var i = 0u; i < 16u; i ++) {
         r.limbs[i] = r_wide.limbs[i];
     }
     return fr_reduce(&r);
@@ -126,6 +126,12 @@ fn fr_sqr(a: ptr<function, BigInt256>) -> BigInt256 {
     return fr_mul(a, a);
 }
 
+fn fr_add(a: ptr<function, BigInt256>, b: ptr<function, BigInt256>) -> BigInt256 { 
+    var res: BigInt256;
+    /*var res = bigint_add(a, b);*/
+    bigint_add(a, b, &res);
+    return fr_reduce(&res);
+}
 
 /*// once reduces once (assumes that 0 <= a < 2 * mod)*/
 fn fr_reduce(a: ptr<function, BigInt256>) -> BigInt256 {

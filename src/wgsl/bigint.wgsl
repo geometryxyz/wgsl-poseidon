@@ -1,3 +1,13 @@
+fn bigint_add(a: ptr<function, BigInt256>, b: ptr<function, BigInt256>, res: ptr<function, BigInt256>) -> u32 {
+    var carry: u32 = 0u;
+    for (var j: u32 = 0u; j < 16u; j ++) {
+        let c: u32 = (*a).limbs[j] + (*b).limbs[j] + carry;
+        (*res).limbs[j] = c & 65535u;
+        carry = c >> 16u;
+    }
+    return carry;
+}
+
 fn bigint_mul(a: ptr<function, BigInt256>, b: ptr<function, BigInt256>) -> BigInt512 {
     var N = 16u;
     var W = 16u;

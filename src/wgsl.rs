@@ -28,7 +28,7 @@ pub mod tests {
 
     #[test]
     pub fn test_concat_files() {
-        let input = concat_files(vec!["src/structs.wgsl", "src/storage.wgsl", "src/bigint.wgsl", "src/fr.wgsl"]);
+        let input = concat_files(vec!["src/wgsl/structs.wgsl", "src/wgsl/storage.wgsl", "src/wgsl/bigint.wgsl", "src/wgsl/fr.wgsl"]);
         assert!(validate(&input).is_ok());
     }
 }
