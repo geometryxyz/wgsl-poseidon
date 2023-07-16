@@ -2,13 +2,17 @@
   "name": "wgsl-poseidon",
   "version": "0.0.1",
   "description": "",
-  "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Koh Wei Jie",
   "license": "MIT",
+  "dependencies": {
+    "ffjavascript": "^0.2.45"
+  },
   "devDependencies": {
-    "parcel": "^2.9.3"
+    "assert": "^2.0.0",
+    "parcel": "^2.9.3",
+    "process": "^0.11.10"
   }
 }
