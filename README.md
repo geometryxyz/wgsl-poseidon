@@ -15,8 +15,6 @@ the following parameters:
 The results from this implementation should match those of the circomlibjs
 implementation on BN254.
 
-Browser support is forthcoming.
-
 ## Getting started
 
 Clone this repository, navigate to the project directory, and run:
@@ -44,3 +42,36 @@ memory on a Ubuntu Linux machine with version 535.54.03 of the Nvidia driver.
 
 The code, however, fails to run on the same machine's Intel(R) UHD Graphics 620
 (WHL GT2) integrated GPU with the Mesa v22.2.5 driver.
+
+## Poseidon hash using WebGPU in the browser
+
+The following works with Firefox Nightly 117.0a1 (2023-07-15) (64-bit).
+
+Enter `about:config` in the address bar and set the following to true:
+
+- `dom.webgpu.enabled`
+- `gfx.webgpu.force-enabled`
+
+Next, in the command line, navigate to the `web` subdirectory:
+
+```bash
+cd web
+```
+
+Install dependencies:
+
+```bash
+npm i
+```
+
+Run the web server:
+
+```bash
+npx parcel index.html
+```
+
+Navigate to the URL that appears and viola! You should see the following hash of the field element `1`:
+
+```
+18586133768512220936620570745912940619677854269274689475585506675881198879027
+```
