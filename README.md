@@ -45,7 +45,9 @@ The code, however, fails to run on the same machine's Intel(R) UHD Graphics 620
 
 ## Poseidon hash using WebGPU in the browser
 
-The following works with Firefox Nightly 117.0a1 (2023-07-15) (64-bit).
+The following was tested with [Firefox
+Nightly](https://www.mozilla.org/en-US/firefox/nightly/notes/) 117.0a1
+(2023-07-15) (64-bit).
 
 Enter `about:config` in the address bar and set the following to true:
 
