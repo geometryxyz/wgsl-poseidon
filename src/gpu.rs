@@ -243,22 +243,11 @@ pub async fn double_buffer_compute(
             },
         ],
     });
-    //let bind_group_1 = device.create_bind_group(&wgpu::BindGroupDescriptor {
-        //label: None,
-        //layout: &bind_group_layout,
-        //entries: &[
-            //wgpu::BindGroupEntry {
-                //binding: 0,
-                //resource: storage_buffer_b.as_entire_binding(),
-            //},
-        //],
-    //});
 
     {
         let mut cpass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor { label: None });
         cpass.set_pipeline(&compute_pipeline);
         cpass.set_bind_group(0, &bind_group_0, &[]);
-        //cpass.set_bind_group(1, &bind_group_1, &[]);
         cpass.insert_debug_marker("debug marker");
         cpass.dispatch_workgroups(num_x_workgroups as u32, num_y_workgroups as u32, 1); // Number of cells to run, the (x,y,z) size of item being processed
     }

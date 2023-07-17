@@ -1,13 +1,3 @@
-/*
-@compute
-@workgroup_size(1)
-fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
-    var a: BigInt256 = buf[global_id.x];
-    var c: BigInt256 = constants[global_id.y];
-    buf[global_id.x] = c;
-}
-*/
-
 @compute
 @workgroup_size(64)
 fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
@@ -25,7 +15,6 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
 
     // for t == 2, n_rounds_f + n_rounds_p = 64
     for (var i = 0u; i < 64u; i ++) {
-    /*for (var i = 0u; i < 2u; i ++) {*/
         // Add round constants (also known as "arc" or "ark")
         var c_0 = constants[global_id.y + i * 2u];
         var c_1 = constants[global_id.y + i * 2u + 1u];

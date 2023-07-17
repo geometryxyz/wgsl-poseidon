@@ -1,37 +1,80 @@
 const assert = require('assert');
+const crypto = require('crypto');
 // Parcel should inline the fs module. See https://github.com/parcel-bundler/parcel/issues/8256
 import { readFileSync } from 'fs';
 import * as constants from './poseidon_constants';
+import { buildPoseidon } from 'circomlibjs'
+import { utils } from 'ffjavascript'
 
 // Define the storage buffer size
 // TODO: figure out the correct size for the storage buffer
 
-const shader = readFileSync('./shader.wgsl', 'utf8');
+//const shader = readFileSync('./shader.wgsl', 'utf8');
+import shader from 'bundle-text:../src/wgsl/structs.wgsl';
+import structs from 'bundle-text:../src/wgsl/structs.wgsl';
+import storage from 'bundle-text:../src/wgsl/storage.wgsl';
+import bigint from 'bundle-text:../src/wgsl/bigint.wgsl';
+import fr from 'bundle-text:../src/wgsl/fr.wgsl';
+import poseidon_t2 from 'bundle-text:../src/wgsl/poseidon_t2.wgsl';
+const shader = 
+    structs + '\n' +
+    storage + '\n' +
+    bigint + '\n' +
+    fr + '\n' +
+    poseidon_t2;
 
 async function poseidon(input: BigInt) {
+    const codeOutput = document.getElementById("output");
+
+    const constants_flat: BigInt[] = []
+
     const t = 2
     const constants_c = constants.default.C
     const constants_m = constants.default.M
 
+	const num_inputs = 256 * 64;
+    const numXWorkgroups = 256;
+
+    //let inputs: BigInt[] = [BigInt(1), BigInt(1)]
+    let inputs: BigInt[] = []
+
+	const p = BigInt('0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000001')
+    for (let i = 0; i < num_inputs; i ++) {
+        const rand = BigInt('0x' + crypto.randomBytes(32).toString('hex')) % p
+        inputs.push(rand)
+    }
+
+    const hasher = await buildPoseidon();
+    let expectedHashes: BigInt[] = []
+    let start = Date.now()
+    for (const input of inputs) {
+        const hash = utils.leBuff2int(hasher.F.fromMontgomery(hasher([input])))
+        expectedHashes.push(hash)
+    }
+    let elapsed = Date.now() - start
+
+    codeOutput.innerHTML = "Computing " + inputs.length + " Poseidon hashes in the browser / WebGPU<br />";
+    codeOutput.innerHTML += "CPU took " + elapsed + " ms<br />"
+    
     // Append the C constants
-    let inputs: BigInt[] = [input];
     for (const c_val of constants_c[t - 2]) {
-        inputs.push(BigInt(c_val));
+        //inputs.push(BigInt(c_val));
+        constants_flat.push(BigInt(c_val));
     }
 
     // Append the M constants
     for (const vs of constants_m[t - 2]) {
         for (const v_val of vs) {
-            inputs.push(BigInt(v_val))
+            constants_flat.push(BigInt(v_val))
         }
     }
 
-    const input_bytes = new Uint8Array(
-        bigints_to_limbs(inputs).buffer
-    );
+    const input_bytes = new Uint8Array(bigints_to_limbs(inputs).buffer);
+    const constants_bytes = new Uint8Array(bigints_to_limbs(constants_flat).buffer);
 
-    const BUFFER_SIZE = input_bytes.length;
-    console.log(inputs.length, BUFFER_SIZE)
+    const INPUT_BUFFER_SIZE = input_bytes.length;
+    const CONSTANTS_BUFFER_SIZE = constants_bytes.length;
+    console.log(inputs.length, INPUT_BUFFER_SIZE)
 
     console.log(0)
     // 1: request adapter and device
@@ -63,14 +106,21 @@ async function poseidon(input: BigInt) {
     //buffer to be mapped for JavaScript access
 
     const storageBuffer = device.createBuffer({
-        size: BUFFER_SIZE,
+        size: INPUT_BUFFER_SIZE,
         // @ts-ignore
         usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST
     });
     device.queue.writeBuffer(storageBuffer, 0, input_bytes);
 
+    const constantsBuffer = device.createBuffer({
+        size: CONSTANTS_BUFFER_SIZE,
+        // @ts-ignore
+        usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST
+    });
+    device.queue.writeBuffer(constantsBuffer, 0, constants_bytes);
+
     const stagingBuffer = device.createBuffer({
-        size: BUFFER_SIZE,
+        size: INPUT_BUFFER_SIZE,
         // @ts-ignore
         usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST
     });
@@ -82,24 +132,42 @@ async function poseidon(input: BigInt) {
     // GPUComputePipeline
     const bindGroupLayout =
         device.createBindGroupLayout({
-            entries: [{
-                binding: 0,
-                // @ts-ignore
-                visibility: GPUShaderStage.COMPUTE,
-                buffer: {
-                    type: "storage"
-                }
-            }]
+            entries: [
+				{
+					binding: 0,
+					// @ts-ignore
+					visibility: GPUShaderStage.COMPUTE,
+					buffer: {
+						type: "storage"
+					},
+				},
+				{
+					binding: 1,
+					// @ts-ignore
+					visibility: GPUShaderStage.COMPUTE,
+					buffer: {
+						type: "read-only-storage"
+					},
+				}
+			]
         });
 
     const bindGroup = device.createBindGroup({
         layout: bindGroupLayout,
-        entries: [{
-            binding: 0,
-            resource: {
-                buffer: storageBuffer,
-            }
-        }]
+		entries: [
+			{
+				binding: 0,
+				resource: {
+					buffer: storageBuffer,
+				}
+			},
+			{
+				binding: 1,
+				resource: {
+					buffer: constantsBuffer,
+				}
+			},
+		]
     });
 
     const computePipeline = device.createComputePipeline({
@@ -118,6 +186,7 @@ async function poseidon(input: BigInt) {
 
     console.log(5)
 
+    start = Date.now()
     // 6: Initiate render pass
     const passEncoder = commandEncoder.beginComputePass();
 
@@ -126,7 +195,7 @@ async function poseidon(input: BigInt) {
     // 7: Issue commands
     passEncoder.setPipeline(computePipeline);
     passEncoder.setBindGroup(0, bindGroup);
-    passEncoder.dispatchWorkgroups(1)
+    passEncoder.dispatchWorkgroups(numXWorkgroups)
 
     // End the render pass
     passEncoder.end();
@@ -137,7 +206,7 @@ async function poseidon(input: BigInt) {
         0, // Source offset
         stagingBuffer,
         0, // Destination offset
-        BUFFER_SIZE
+        INPUT_BUFFER_SIZE
     );
 
     console.log(7)
@@ -151,30 +220,39 @@ async function poseidon(input: BigInt) {
         // @ts-ignore
         GPUMapMode.READ,
         0, // Offset
-        BUFFER_SIZE // Length
+        INPUT_BUFFER_SIZE // Length
     );
     console.log(7.2)
 
-    const copyArrayBuffer = stagingBuffer.getMappedRange(0, BUFFER_SIZE);
-    console.log(7.3)
+    const copyArrayBuffer = stagingBuffer.getMappedRange(0, INPUT_BUFFER_SIZE);
     const data = copyArrayBuffer.slice();
-    console.log(7.4)
     stagingBuffer.unmap();
 
     console.log(8)
 
-    const codeOutput = document.getElementById("output");
-
     const dataBuf = new Uint32Array(data);
-    const result = uint32ArrayToBigint(dataBuf.slice(0, 16))
-    codeOutput.innerHTML = result.toString();
+    elapsed = Date.now() - start
+
+    codeOutput.innerHTML += "GPU took " + elapsed + " ms"
+
+    const results: BigInt[] = []
+    for (let i = 0; i < dataBuf.length / 16; i ++) {
+        const result = uint32ArrayToBigint(dataBuf.slice(i * 16, i * 16 + 16))
+        results.push(result)
+    }
+    console.log(results)
+    console.log(expectedHashes)
+    for (let i = 0; i < results.length; i ++) {
+        assert(results[i] === expectedHashes[i])
+    }
+    assert(results.length === expectedHashes.length)
 }
 
 // From msm-webgpu
-const uint32ArrayToBigint = (uint32Array: Uint32Array) => {
+const uint32ArrayToBigint = (arr: any) => {
     // Convert the Uint16Array to a hex string
     let hexString = '';
-    for (const uint32 of uint32Array) {
+    for (const uint32 of arr) {
         hexString = uint32.toString(16).padStart(4, '0') + hexString;
     }
 

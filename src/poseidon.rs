@@ -51,7 +51,7 @@ pub fn test_poseidon() {
     let num_inputs = 256 * 64;
     let num_x_workgroups = 256;
 
-    println!("Computing {} Poseidon hashes", num_inputs);
+    println!("Computing {} Poseidon hashes in Rust / WebGPU", num_inputs);
 
     let mut inputs: Vec<BigUint> = Vec::with_capacity(num_inputs);
 
