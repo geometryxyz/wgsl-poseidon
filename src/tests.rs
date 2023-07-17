@@ -18,8 +18,8 @@ pub fn test_double_buffer() {
         0u8, 0u8, 0u8, 0u8,
     ];
     let wgsl = concat_files(vec!["src/wgsl/two_buffer.wgsl"]);
-    let results = pollster::block_on(double_buffer_compute(&wgsl, &a, &b, 1)).unwrap();
-    assert_eq!(results.1[0], results.0[0] * 2);
+    let results = pollster::block_on(double_buffer_compute(&wgsl, &a, &b, 1, 1)).unwrap();
+    assert_eq!(results[0], 2u32);
 }
 
 #[test]

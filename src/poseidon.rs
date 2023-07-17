@@ -1,10 +1,10 @@
-use rand::Rng;
+//use rand::Rng;
 use ark_bn254::Fr;
 use stopwatch::Stopwatch;
 use num_bigint::BigUint;
-use std::str::FromStr;
-use crate::bn254::get_fr;
-use crate::gpu::single_buffer_compute;
+//use std::str::FromStr;
+//use crate::bn254::get_fr;
+use crate::gpu::double_buffer_compute;
 use crate::wgsl::concat_files;
 use crate::utils::{ bigints_to_bytes, u32s_to_bigints };
 use poseidon_ark::{ Poseidon, load_constants };
@@ -39,37 +39,42 @@ pub fn fr_vec_to_biguint_vec(vals: &Vec<Fr>) -> Vec<BigUint> {
 #[test]
 pub fn test_poseidon() {
     // The BN254 scalar field modulus
-    let p = get_fr();
+    //let p = get_fr();
 
-    let b0: Fr = Fr::from_str("0").unwrap();
+    //let b0: Fr = Fr::from_str("0").unwrap();
 
     //let mut rng = rand::thread_rng();
     //let random_bytes = rng.gen::<[u8; 32]>();
     //let a = BigUint::from_bytes_be(random_bytes.as_slice()) % &p;
     let a = BigUint::from_slice(&[1]);
+    //let state = vec![b0.clone(), a.clone().into()];
+    //let mut state = vec![b0.clone(), a.clone().into()];
 
     // Number of inputs: 1
     // t = 1 + 1 = 2
 
-    let mut inputs: Vec<BigUint> = vec![a.clone().into()];
+    let poseidon = Poseidon::new();
+    let p_constants = load_constants();
+
+    let inputs: Vec<BigUint> = vec![
+        a.clone().into(),
+        //a.clone().into(),
+    ];
+    let mut constants: Vec<BigUint> = Vec::with_capacity(p_constants.c.len() + 4);
+
     let t = inputs.len() + 1;
     let _n_rounds_f = 8;
     let _n_rounds_p = 56;
-    let state = vec![b0.clone(), a.clone().into()];
-    //let mut state = vec![b0.clone(), a.clone().into()];
-
-    let poseidon = Poseidon::new();
-    let constants = load_constants();
 
     // Append the C constants
-    for val in fr_vec_to_biguint_vec(&constants.c[t - 2]) {
-        inputs.push(val);
+    for val in fr_vec_to_biguint_vec(&p_constants.c[t - 2]) {
+        constants.push(val);
     }
 
     // Append the M constants
-    for vec in &constants.m[t - 2] {
+    for vec in &p_constants.m[t - 2] {
         for val in fr_vec_to_biguint_vec(&vec) {
-            inputs.push(val.clone());
+            constants.push(val.clone());
         }
     }
 
@@ -85,7 +90,8 @@ pub fn test_poseidon() {
     //println!("expected final state: {:?}", expected_final_state);
 
     //let input_to_gpu = bigints_to_bytes(fr_vec_to_biguint_vec(&inputs));
-    let input_to_gpu = bigints_to_bytes(inputs);
+    let buf = bigints_to_bytes(inputs.clone());
+    let constants = bigints_to_bytes(constants);
 
     // Passing the constants as hardcoded WGSL code is to inefficient
     //let wgsl = gen_poseidon_t2_wgsl();
@@ -102,13 +108,11 @@ pub fn test_poseidon() {
     //println!("{}", wgsl);
 
     // Send to the GPU
-    let sw = Stopwatch::start_new();
-    let result = pollster::block_on(single_buffer_compute(&wgsl, &input_to_gpu, 1)).unwrap();
-    println!("GPU took {}ms", sw.elapsed_ms());
+    let result = pollster::block_on(double_buffer_compute(&wgsl, &buf, &constants, 1, 1)).unwrap();
 
     let result = u32s_to_bigints(result);
-    println!("Input: {:?}", a.clone());
-    println!("Result from GPU: {:?}", result[0]);
+    println!("Input: {:?}", inputs.clone());
+    println!("Result from GPU: {:?}", result.clone());
     //assert_eq!(result[0], expected_final_state[0]);
     assert_eq!(result[0], expected_hash);
 
