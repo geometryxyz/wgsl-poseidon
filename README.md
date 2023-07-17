@@ -26,10 +26,10 @@ cargo test test_poseidon -- --nocapture
 You should see output like this:
 
 ```
+Computing 16384 Poseidon hashes in Rust / WebGPU
+CPU took 609ms
 AdapterInfo { name: "Quadro P520", vendor: 4318, device: 7476, device_type: DiscreteGpu, driver: "NVIDIA", driver_info: "535.54.03", backend: Vulkan }
-GPU took 132ms
-Input: 1
-Result from GPU: 18586133768512220936620570745912940619677854269274689475585506675881198879027
+GPU took 276ms
 test poseidon::test_poseidon ... ok
 ```
 
@@ -72,8 +72,10 @@ Run the web server:
 npx parcel index.html
 ```
 
-Navigate to the URL that appears and viola! You should see the following hash of the field element `1`:
+Navigate to the URL that appears and viola! You should see something like the following:
 
 ```
-18586133768512220936620570745912940619677854269274689475585506675881198879027
+Computing 16384 Poseidon hashes in the browser / WebGPU
+CPU took 1983 ms
+GPU took 299 ms
 ```
