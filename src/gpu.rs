@@ -43,6 +43,7 @@ pub async fn device_setup_default(
         .unwrap();
 
     let info = adapter.get_info();
+    println!("{:?}", info);
 
     let cs_module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
         label: None,

@@ -2,25 +2,9 @@ use rand::Rng;
 use stopwatch::Stopwatch;
 use num_bigint::BigUint;
 use crate::bn254::get_fr;
-use crate::gpu::{ single_buffer_compute, double_buffer_compute };
+use crate::gpu::single_buffer_compute;
 use crate::wgsl::concat_files;
 use crate::utils::{ bigints_to_bytes, u32s_to_bigints };
-
-#[test]
-pub fn test_double_buffer() {
-    // Denotes 0x0000001
-    let a = vec![
-        1u8, 0u8, 0u8, 0u8,
-    ];
-
-    // Denotes 0x0000000
-    let b = vec![
-        0u8, 0u8, 0u8, 0u8,
-    ];
-    let wgsl = concat_files(vec!["src/wgsl/two_buffer.wgsl"]);
-    let results = pollster::block_on(double_buffer_compute(&wgsl, &a, &b, 1, 1)).unwrap();
-    assert_eq!(results[0], 2u32);
-}
 
 #[test]
 pub fn test_pow_5() {

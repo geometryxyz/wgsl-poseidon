@@ -1,9 +1,9 @@
-//use rand::Rng;
+use rand::Rng;
 use ark_bn254::Fr;
 use stopwatch::Stopwatch;
 use num_bigint::BigUint;
 //use std::str::FromStr;
-//use crate::bn254::get_fr;
+use crate::bn254::get_fr;
 use crate::gpu::double_buffer_compute;
 use crate::wgsl::concat_files;
 use crate::utils::{ bigints_to_bytes, u32s_to_bigints };
@@ -38,33 +38,33 @@ pub fn fr_vec_to_biguint_vec(vals: &Vec<Fr>) -> Vec<BigUint> {
 
 #[test]
 pub fn test_poseidon() {
-    // The BN254 scalar field modulus
-    //let p = get_fr();
-
-    //let b0: Fr = Fr::from_str("0").unwrap();
-
     //let mut rng = rand::thread_rng();
     //let random_bytes = rng.gen::<[u8; 32]>();
     //let a = BigUint::from_bytes_be(random_bytes.as_slice()) % &p;
-    let a = BigUint::from_slice(&[1]);
-    //let state = vec![b0.clone(), a.clone().into()];
-    //let mut state = vec![b0.clone(), a.clone().into()];
-
+    //let a = BigUint::from_slice(&[1]);
     // Number of inputs: 1
     // t = 1 + 1 = 2
 
     let poseidon = Poseidon::new();
     let p_constants = load_constants();
 
-    let inputs: Vec<BigUint> = vec![
-        a.clone().into(),
-        //a.clone().into(),
-    ];
+    let num_inputs = 256 * 64;
+    let num_x_workgroups = 256;
+
+    println!("Computing {} Poseidon hashes", num_inputs);
+
+    let mut inputs: Vec<BigUint> = Vec::with_capacity(num_inputs);
+
+    let mut rng = rand::thread_rng();
+    for _ in 0..num_inputs {
+        let random_bytes = rng.gen::<[u8; 32]>();
+        let a = BigUint::from_bytes_be(random_bytes.as_slice()) % get_fr();
+        inputs.push(a);
+    }
+
     let mut constants: Vec<BigUint> = Vec::with_capacity(p_constants.c.len() + 4);
 
-    let t = inputs.len() + 1;
-    let _n_rounds_f = 8;
-    let _n_rounds_p = 56;
+    let t = 2;
 
     // Append the C constants
     for val in fr_vec_to_biguint_vec(&p_constants.c[t - 2]) {
@@ -78,13 +78,20 @@ pub fn test_poseidon() {
         }
     }
 
-    let expected_hash: BigUint = poseidon.hash(vec![a.clone().into()]).unwrap().into();
+    let sw = Stopwatch::start_new();
+    let expected_hashes: Vec<BigUint> = inputs.iter().map(|a| poseidon.hash(vec![a.clone().into()]).unwrap().into()).collect();
+    println!("CPU took {}ms", sw.elapsed_ms());
 
-    // For debugging:
+    //// For debugging:
+    //let b0: Fr = Fr::from_str("0").unwrap();
+    //let state = vec![b0.clone(), a.clone().into()];
+    //let mut state = vec![b0.clone(), a.clone().into()];
+    //let n_rounds_f = 8;
+    //let n_rounds_p = 56;
     //for i in 0..(n_rounds_f + n_rounds_p) {
-        //poseidon.ark(&mut state, &constants.c[t - 2], i * t);
+        //poseidon.ark(&mut state, &p_constants.c[t - 2], i * t);
         //poseidon.sbox(n_rounds_f, n_rounds_p, &mut state, i);
-        //state = poseidon.mix(&state, &constants.m[t - 2]);
+        //state = poseidon.mix(&state, &p_constants.m[t - 2]);
     //}
     //let expected_final_state = fr_vec_to_biguint_vec(&state);
     //println!("expected final state: {:?}", expected_final_state);
@@ -108,12 +115,12 @@ pub fn test_poseidon() {
     //println!("{}", wgsl);
 
     // Send to the GPU
-    let result = pollster::block_on(double_buffer_compute(&wgsl, &buf, &constants, 1, 1)).unwrap();
+    let result = pollster::block_on(double_buffer_compute(&wgsl, &buf, &constants, num_x_workgroups, 1)).unwrap();
 
     let result = u32s_to_bigints(result);
-    println!("Input: {:?}", inputs.clone());
-    println!("Result from GPU: {:?}", result.clone());
+    //println!("Input: {:?}", inputs.clone());
+    //println!("Result from GPU: {:?}", result.clone());
     //assert_eq!(result[0], expected_final_state[0]);
-    assert_eq!(result[0], expected_hash);
+    assert_eq!(result, expected_hashes);
 
 }
