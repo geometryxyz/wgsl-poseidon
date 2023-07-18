@@ -15,6 +15,15 @@ the following parameters:
 The results from this implementation should match those of the circomlibjs
 implementation on BN254.
 
+## Credits
+
+Much of the big integer and finite field code was adapted from 
+[msm-webgpu](https://github.com/sampritipanda/msm-webgpu) by Sampriti Panda,
+Adhyyan Sekhsaria, and Nalin Bhardwaj.
+
+The structure of the Poseidon WGSL code was inspired by
+[poseidon-ark](https://github.com/arnaucube/poseidon-ark) by arnaucube.
+
 ## Getting started
 
 Clone this repository, navigate to the project directory, and run:
