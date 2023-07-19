@@ -20,3 +20,6 @@ ark-ff = "0.4.0"
 ark-bn254 = "0.4.0"
 poseidon-ark = { git = "https://github.com/arnaucube/poseidon-ark.git" }
 naga = "0.12.3"
+ark-poly = { version = "^0.4.0", default-features = false }
+#ethers = "1.0.2"
+hex = "0.4.3"
