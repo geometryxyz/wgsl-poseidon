@@ -7,6 +7,9 @@
   },
   "author": "Koh Wei Jie",
   "license": "MIT",
+  "alias": {
+    "events": false
+  },
   "dependencies": {
     "circomlibjs": "^0.1.7",
     "ffjavascript": "^0.2.45"

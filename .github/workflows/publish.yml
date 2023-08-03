@@ -1,4 +1,4 @@
-name: NodeJS with Gulp
+name: NodeJS with Parcel
 
 on:
   push:
@@ -12,7 +12,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [14.x, 16.x, 18.x]
+        node-version: [18.x]
 
     steps:
     - uses: actions/checkout@v3
@@ -22,8 +22,14 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
 
+    - name: npm install
+      run: cd web && npm install
+
     - name: Build
-      run: |
-        cd web
-        npm install
-        npx parcel index.html
+      run: cd web && npx parcel build --public-url ./ index.html
+
+    - name: Deploy to GitHub Pages
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./web/dist/
