@@ -23,22 +23,22 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
 
         // S-Box
         var s0 = state_0;
-        state_0 = fr_mul(&state_0, &state_0);
-        state_0 = fr_mul(&state_0, &state_0);
-        state_0 = fr_mul(&s0, &state_0);
+        state_0 = cios_mon_pro(&state_0, &state_0);
+        state_0 = cios_mon_pro(&state_0, &state_0);
+        state_0 = cios_mon_pro(&s0, &state_0);
 
         if (i < 4u || i >= 60u) {
             var s1 = state_1;
-            state_1 = fr_mul(&state_1, &state_1);
-            state_1 = fr_mul(&state_1, &state_1);
-            state_1 = fr_mul(&s1, &state_1);
+            state_1 = cios_mon_pro(&state_1, &state_1);
+            state_1 = cios_mon_pro(&state_1, &state_1);
+            state_1 = cios_mon_pro(&s1, &state_1);
         }
 
         // Mix
-        var m00s0 = fr_mul(&m_0_0, &state_0);
-        var m01s1 = fr_mul(&m_0_1, &state_1);
-        var m10s0 = fr_mul(&m_1_0, &state_0);
-        var m11s1 = fr_mul(&m_1_1, &state_1);
+        var m00s0 = cios_mon_pro(&m_0_0, &state_0);
+        var m01s1 = cios_mon_pro(&m_0_1, &state_1);
+        var m10s0 = cios_mon_pro(&m_1_0, &state_0);
+        var m11s1 = cios_mon_pro(&m_1_1, &state_1);
 
         var new_state_0: BigInt256 = fr_add(&m00s0, &m01s1);
         var new_state_1: BigInt256 = fr_add(&m10s0, &m11s1);

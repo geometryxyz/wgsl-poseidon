@@ -16,34 +16,11 @@ fn fr_get_p() -> BigInt256 {
     p.limbs[13] = 57649u;
     p.limbs[14] = 20082u;
     p.limbs[15] = 12388u;
-
     return p;
 }
 
-fn fr_get_mu() -> BigInt256 {
-    var p: BigInt256;
-    p.limbs[0] = 59685u;
-    p.limbs[1] = 48669u;
-    p.limbs[2] = 934u;
-    p.limbs[3] = 25095u;
-    p.limbs[4] = 32942u;
-    p.limbs[5] = 2536u;
-    p.limbs[6] = 34080u;
-    p.limbs[7] = 28996u;
-    p.limbs[8] = 12308u;
-    p.limbs[9] = 26631u;
-    p.limbs[10] = 19032u;
-    p.limbs[11] = 43783u;
-    p.limbs[12] = 1191u;
-    p.limbs[13] = 25146u;
-    p.limbs[14] = 29794u;
-    p.limbs[15] = 21668u;
-
-    return p;
-}
-
-fn fr_get_p_wide() -> BigInt512 {
-    var p: BigInt512;
+fn gen_p_medium_wide() -> BigInt272 {
+    var p: BigInt272;
     p.limbs[0] = 1u;
     p.limbs[1] = 61440u;
     p.limbs[2] = 62867u;
@@ -60,70 +37,7 @@ fn fr_get_p_wide() -> BigInt512 {
     p.limbs[13] = 57649u;
     p.limbs[14] = 20082u;
     p.limbs[15] = 12388u;
-    p.limbs[16] = 0u;
-    p.limbs[17] = 0u;
-    p.limbs[18] = 0u;
-    p.limbs[19] = 0u;
-    p.limbs[20] = 0u;
-    p.limbs[21] = 0u;
-    p.limbs[22] = 0u;
-    p.limbs[23] = 0u;
-    p.limbs[24] = 0u;
-    p.limbs[25] = 0u;
-    p.limbs[26] = 0u;
-    p.limbs[27] = 0u;
-    p.limbs[28] = 0u;
-    p.limbs[29] = 0u;
-    p.limbs[30] = 0u;
-    p.limbs[31] = 0u;
     return p;
-}
-
-fn get_higher_with_slack(a: ptr<function, BigInt512>) -> BigInt256 {
-    var out: BigInt256;
-    /*var slack = 2u; // 256 minus the bitwidth of the Fr modulus*/
-    /*var W = 16u;*/
-    /*var W_mask = 65535u;*/
-    for (var i = 0u; i < 16u; i ++) {
-        /*
-          This loop operates on the most significant bits of the bigint.
-          It discards the least significant bits.
-        */ 
-        //                       mul by 2 ** 1         divide by 2 ** 15
-        /*out.limbs[i] = (((*a).limbs[i + 16u] << slack) + ((*a).limbs[i + 15u] >> (W - slack))) & W_mask;*/
-        out.limbs[i] = (((*a).limbs[i + 16u] << 2u) + ((*a).limbs[i + 15u] >> 14u)) & 65535u;
-    }
-    return out;
-}
-
-
-fn fr_mul(a: ptr<function, BigInt256>, b: ptr<function, BigInt256>) -> BigInt256 {
-    var mu = fr_get_mu();
-    var p = fr_get_p();
-    var p_wide = fr_get_p_wide();
-
-    var xy: BigInt512 = bigint_mul(a, b);
-    var xy_hi: BigInt256 = get_higher_with_slack(&xy);
-    var l: BigInt512 = bigint_mul(&xy_hi, &mu);
-    var l_hi: BigInt256 = get_higher_with_slack(&l);
-    var lp: BigInt512 = bigint_mul(&l_hi, &p);
-    var r_wide: BigInt512;
-    bigint_512_sub(&xy, &lp, &r_wide);
-
-    var r_wide_reduced: BigInt512;
-    var underflow = bigint_512_sub(&r_wide, &p_wide, &r_wide_reduced);
-    if (underflow == 0u) {
-        r_wide = r_wide_reduced;
-    }
-    var r: BigInt256;
-    for (var i = 0u; i < 16u; i ++) {
-        r.limbs[i] = r_wide.limbs[i];
-    }
-    return fr_reduce(&r);
-}
-
-fn fr_sqr(a: ptr<function, BigInt256>) -> BigInt256 {
-    return fr_mul(a, a);
 }
 
 fn fr_add(a: ptr<function, BigInt256>, b: ptr<function, BigInt256>) -> BigInt256 { 
@@ -143,4 +57,82 @@ fn fr_reduce(a: ptr<function, BigInt256>) -> BigInt256 {
     }
 
     return res;
+}
+
+fn hi(val: u32) -> u32 {
+    return val >> 16u;
+}
+
+fn lo(val: u32) -> u32 {
+    return val & 65535u;
+}
+
+fn cios_mon_pro(a: ptr<function, BigInt256>, b: ptr<function, BigInt256>) -> BigInt256 {
+    var n = gen_p_medium_wide();
+    var n0 = 65535u;
+    var num_words = 16u;
+
+    var t: array<u32, 18u>;
+    var x: BigInt256;
+
+    for (var i = 0u; i < num_words; i ++) {
+        var c = 0u;
+        for (var j = 0u; j < num_words; j ++) {
+            var r = t[j] + (*a).limbs[j] * (*b).limbs[i] + c;
+            c = hi(r);
+            t[j] = lo(r);
+        }
+        var r = t[num_words] + c;
+        t[num_words + 1u] = hi(r);
+        t[num_words] = lo(r);
+
+        var m = (t[0] * n0) % 65536u;
+        r = t[0] + m * n.limbs[0];
+        c = hi(r);
+
+        for (var j = 1u; j < num_words; j ++) {
+            r = t[j] + m * n.limbs[j] + c;
+            c = hi(r);
+            t[j - 1u] = lo(r);
+        }
+
+        r = t[num_words] + c;
+        c = hi(r);
+        t[num_words - 1u] = lo(r);
+        t[num_words] = t[num_words + 1u] + c;
+    }
+
+    // Check if t > n. If so, return n - t. Else, return t.
+    var t_lt_n = false;
+    for (var idx = 0u; idx < num_words + 1u; idx ++) {
+        var i = num_words - 1u - idx;
+        if (t[i] < n.limbs[i]) {
+            t_lt_n = true;
+            break;
+        } else if (t[i] > n.limbs[i]) {
+            break;
+        }
+    }
+
+    var r: BigInt256;
+    if (t_lt_n) {
+        for (var i = 0u; i < num_words; i ++) {
+            r.limbs[i] = t[i];
+        }
+        return r;
+    } else {
+        var borrow = 0u;
+        var t_minus_n: BigInt272;
+        for (var i = 0u; i < num_words; i ++) {
+            t_minus_n.limbs[i] = t[i] - n.limbs[i] - borrow;
+            if (t[i] < (n.limbs[i] + borrow)) {
+                t_minus_n.limbs[i] = t_minus_n.limbs[i] + 65536u;
+                borrow = 1u;
+            } else {
+                borrow = 0u;
+            }
+            x.limbs[i] = t_minus_n.limbs[i];
+        }
+        return x;
+    }
 }
