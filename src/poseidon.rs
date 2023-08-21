@@ -84,8 +84,8 @@ pub fn test_poseidon() {
 
         // Convert to Montgomery form
         let a = Fr::from_le_bytes_mod_order(random_bytes.as_slice());
-        inputs.push((a * r).into_bigint().into());
         a_inputs.push(a);
+        inputs.push((a * r).into_bigint().into());
     }
 
     let mut constants: Vec<BigUint> = Vec::with_capacity(p_constants.c.len() + 4);
@@ -153,11 +153,11 @@ pub fn test_poseidon() {
 
     let mut from_mont_results: Vec<BigUint> = Vec::with_capacity(num_inputs);
     for r in &result {
-        from_mont_results.push((Fr::from_be_bytes_mod_order(&result[0].to_bytes_be()) * rinv).into_bigint().into());
+        from_mont_results.push((Fr::from_be_bytes_mod_order(&r.to_bytes_be()) * rinv).into_bigint().into());
     }
     //println!("{}, {}", Fr::from_be_bytes_mod_order(&result[0].to_bytes_be()) * rinv, expected_hashes[0]);
     //println!("Input: {:?}", inputs.clone());
-    //println!("Result from GPU: {:?}", result.clone());
+    //println!("Results from GPU converted to Montgomery form: {:?}", from_mont_results.clone());
     //assert_eq!(result[0], expected_final_state[0]);
     assert_eq!(from_mont_results, expected_hashes);
 
