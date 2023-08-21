@@ -4,7 +4,6 @@ use ark_ff::PrimeField;
 use stopwatch::Stopwatch;
 use num_bigint::BigUint;
 //use std::str::FromStr;
-use crate::bn254::get_fr;
 use crate::gpu::double_buffer_compute;
 use crate::wgsl::concat_files;
 use crate::utils::{ bigints_to_bytes, u32s_to_bigints };
@@ -78,8 +77,8 @@ pub fn test_poseidon() {
 
     let mut rng = rand::thread_rng();
     for _ in 0..num_inputs {
-        //let random_bytes = rng.gen::<[u8; 32]>();
-        let mut random_bytes = [1u8];
+        let random_bytes = rng.gen::<[u8; 32]>();
+        //let random_bytes = [1u8];
         //let a = BigUint::from_bytes_be(random_bytes.as_slice()) % get_fr();
 
         // Convert to Montgomery form
