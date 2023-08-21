@@ -36,9 +36,9 @@ You should see output like this:
 
 ```
 Computing 16384 Poseidon hashes in Rust / WebGPU
-CPU took 609ms
+CPU took 416ms
 AdapterInfo { name: "Quadro P520", vendor: 4318, device: 7476, device_type: DiscreteGpu, driver: "NVIDIA", driver_info: "535.54.03", backend: Vulkan }
-GPU took 276ms
+GPU took 88ms
 test poseidon::test_poseidon ... ok
 ```
 
@@ -85,6 +85,6 @@ Navigate to the URL that appears and viola! You should see something like the fo
 
 ```
 Computing 16384 Poseidon hashes in the browser / WebGPU
-CPU took 1983 ms
-GPU took 299 ms
+CPU took 1267 ms
+GPU took 103 ms
 ```
