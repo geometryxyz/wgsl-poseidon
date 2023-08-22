@@ -49,8 +49,8 @@ the GPU caching the shader code.
 This code has been successfully tested with an Nvidia Quadro P520 with 2GB
 memory on a Ubuntu Linux machine with version 535.54.03 of the Nvidia driver.
 
-The code, however, fails to run on the same machine's Intel(R) UHD Graphics 620
-(WHL GT2) integrated GPU with the Mesa v22.2.5 driver.
+The code also runs on the same machine's Intel(R) UHD Graphics 620
+(WHL GT2) integrated GPU with the Mesa v22.2.5 driver, but takes about 1100ms.
 
 ## Poseidon hash using WebGPU in the browser
 
