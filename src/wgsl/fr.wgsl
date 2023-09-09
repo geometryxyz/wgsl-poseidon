@@ -102,7 +102,7 @@ fn cios_mon_pro(a: ptr<function, BigInt256>, b: ptr<function, BigInt256>) -> Big
         t[num_words] = t[num_words + 1u] + c;
     }
 
-    // Check if t > n. If so, return n - t. Else, return t.
+    // Check if t < n. If so, return t. Else, return n - t.
     var t_lt_n = false;
     for (var idx = 0u; idx < num_words + 1u; idx ++) {
         var i = num_words - 1u - idx;
